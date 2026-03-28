@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EventSphere — Available Expos & Book Booth</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #e6f0ff 0%, #f5f7fa 100%);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 3rem;
+      color: #0066cc;
+    }
+    .expo-card {
+      border: none;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    .expo-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    }
+    .card-header {
+      background: #0066cc;
+      color: white;
+      padding: 1.25rem;
+      font-weight: 600;
+    }
+    .booth-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+      gap: 10px;
+      padding: 1.5rem;
+    }
+    .booth {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+    .booth.available { background: #28a745; }
+    .booth.reserved  { background: #dc3545; cursor: not-allowed; }
+    .booth.selected  { border: 4px solid #0066cc; box-shadow: 0 0 0 6px rgba(0,102,204,0.25); transform: scale(1.08); }
+    .booth:hover:not(.reserved) { transform: scale(1.1); }
+    .booth-tooltip {
+      visibility: hidden;
+      position: absolute;
+      top: -60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      z-index: 10;
+    }
+    .booth:hover .booth-tooltip { visibility: visible; }
+    .btn-reserve {
+      background: #0066cc;
+      border: none;
+      padding: 0.8rem 2rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .btn-reserve:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .snackbar {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 320px;
+      padding: 16px 24px;
+      border-radius: 10px;
+      color: white;
+      font-weight: 500;
+      box-shadow: 0 6px 25px rgba(0,0,0,0.3);
+      opacity: 0;
+      transition: all 0.4s;
+      z-index: 9999;
+    }
+    .snackbar.show { opacity: 1; }
+    .snackbar.success { background: #2e7d32; }
+    .snackbar.error   { background: #c62828; }
+
+    @media (max-width: 768px) {
+      .booth-grid { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); }
+      .booth { font-size: 0.95rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1 class="display-5 fw-bold">🎪 Available Expos</h1>
+    <p class="lead text-muted">Browse upcoming expos and book your booth today</p>
+  </div>
+
+  <div class="row g-4" id="expoGrid">
+    <!-- Expos cards loaded here -->
+  </div>
+</div>
+
+<!-- Booth Booking Modal -->
+<div class="modal fade" id="boothModal" tabindex="-1" aria-labelledby="boothModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="boothModalLabel">Book Your Booth – <span id="expoName"></span></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <!-- Booth Grid -->
+          <div class="col-lg-8">
+            <h5 class="mb-4">Select a Booth</h5>
+            <div class="booth-grid" id="boothGrid">
+              <!-- Dynamic booths -->
+            </div>
+          </div>
+
+          <!-- Selected Booth Info -->
+          <div class="col-lg-4">
+            <div class="card shadow-sm sticky-top" style="top:20px;">
+              <div class="card-body">
+                <h5>Selected Booth</h5>
+                <p class="fs-4 fw-bold mb-1" id="selectedBooth">None selected</p>
+                <p class="text-muted mb-3" id="boothInfo">Click a green booth to select</p>
+
+                <button class="btn btn-reserve text-white w-100" id="reserveBtn" disabled>
+                  <i class="fas fa-lock me-2"></i>Reserve Booth
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── Snackbar ───────────────────────────────────────
+function showSnackbar(message, type = 'success') {
+  const snack = document.createElement('div');
+  snack.className = `snackbar ${type} show`;
+  snack.textContent = message;
+  document.body.appendChild(snack);
+  setTimeout(() => snack.classList.remove('show'), 3000);
+  setTimeout(() => snack.remove(), 3500);
+}
+
+// ── Load All Expos ───────────────────────────────────────
+async function loadExpos() {
+  const grid = document.getElementById('expoGrid');
+  grid.innerHTML = '<div class="col-12 text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-3">Loading expos...</p></div>';
+
+  try {
+    const res = await fetch('/api/exhibitor/get-expo', { credentials: 'include' });
+    const data = await res.json();
+
+    if (!data.success) throw new Error(data.message || 'Failed to load expos');
+
+    grid.innerHTML = '';
+
+    data.data.forEach(expo => {
+      const dateStr = new Date(expo.date).toLocaleDateString('en-PK', {
+        day: 'numeric', month: 'short', year: 'numeric'
+      });
+
+      const card = document.createElement('div');
+      card.className = 'col-md-6 col-lg-4';
+      card.innerHTML = `
+        <div class="expo-card h-100">
+          <div class="card-header">
+            <h5 class="mb-0">${expo.title}</h5>
+          </div>
+          <div class="card-body">
+            <p class="mb-2"><i class="fas fa-calendar me-2"></i>${dateStr}</p>
+            <p class="mb-3"><i class="fas fa-map-marker-alt me-2"></i>${expo.location}</p>
+            <p class="text-muted mb-4"><i class="fas fa-palette me-2"></i>${expo.theme || 'General'}</p>
+            <button class="btn btn-outline-primary w-100 view-booths-btn"
+                    data-id="${expo._id}" data-name="${expo.title}">
+              <i class="fas fa-store me-2"></i>View Booths
+            </button>
+          </div>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+  } catch (err) {
+    grid.innerHTML = `<div class="col-12 text-center text-danger py-5">${err.message || 'Failed to load expos'}</div>`;
+    showSnackbar('Could not load available expos', 'error');
+  }
+}
+
+// ── Load Booths for Expo ───────────────────────────────────────
+let currentExpoId = null;
+let selectedBooth = null;
+
+async function loadBooths(expoId, expoName) {
+  document.getElementById('expoName').textContent = expoName;
+  currentExpoId = expoId;
+  selectedBooth = null;
+  document.getElementById('selectedBooth').textContent = 'None selected';
+  document.getElementById('boothInfo').textContent = 'Click a green booth to select';
+  document.getElementById('reserveBtn').disabled = true;
+
+  const grid = document.getElementById('boothGrid');
+  grid.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary"></div><p>Loading booths...</p></div>';
+
+  try {
+    const res = await fetch('/api/exhibitor/get-booth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ expoId })
+    });
+
+    const data = await res.json();
+
+    if (!data.success) throw new Error(data.message || 'Failed to load booths');
+
+    grid.innerHTML = '';
+
+    const booths = data.data || [];
+
+    if (booths.length === 0) {
+      grid.innerHTML = '<div class="text-center text-muted py-5">No booths available yet</div>';
+      return;
+    }
+
+    booths.forEach(booth => {
+      const div = document.createElement('div');
+      div.className = `booth ${booth.status.toLowerCase()}`;
+      div.textContent = booth.boothNumber;
+      div.dataset.number = booth.boothNumber;
+      div.dataset.size = booth.size || '—';
+      div.dataset.status = booth.status;
+
+      const tooltip = document.createElement('div');
+      tooltip.className = 'booth-tooltip';
+      tooltip.textContent = `Size: ${booth.size || 'Standard'} | ${booth.status}`;
+      div.appendChild(tooltip);
+
+      if (booth.status === 'available') {
+        div.addEventListener('click', () => selectBooth(div));
+      }
+
+      grid.appendChild(div);
+    });
+
+  } catch (err) {
+    grid.innerHTML = `<div class="text-center text-danger py-5">${err.message}</div>`;
+    showSnackbar('Failed to load booths', 'error');
+  }
+}
+
+function selectBooth(element) {
+  document.querySelectorAll('.booth').forEach(b => b.classList.remove('selected'));
+  element.classList.add('selected');
+
+  selectedBooth = element.dataset.number;
+  document.getElementById('selectedBooth').textContent = `Booth ${selectedBooth}`;
+  document.getElementById('boothInfo').innerHTML = `
+    Size: ${element.dataset.size}<br>
+    Status: ${element.dataset.status}
+  `;
+  document.getElementById('reserveBtn').disabled = false;
+}
+
+// ── Reserve Booth ───────────────────────────────────────
+document.getElementById('reserveBtn').addEventListener('click', async () => {
+  if (!selectedBooth || !currentExpoId) return;
+
+  const btn = document.getElementById('reserveBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Reserving...';
+
+  try {
+    const res = await fetch('/api/exhibitor/reserve-booth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        expoId: currentExpoId,
+        boothNumber: selectedBooth
+      })
+    });
+
+    const result = await res.json();
+
+    if (!result.success) throw new Error(result.message || 'Reservation failed');
+
+    showSnackbar(result.message || `Booth ${selectedBooth} reserved successfully!`, 'success');
+
+    // Refresh grid
+    loadBooths(currentExpoId, document.getElementById('expoName').textContent);
+
+  } catch (err) {
+    showSnackbar(err.message || 'Could not reserve booth', 'error');
+  } finally {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-lock me-2"></i>Reserve Booth';
+  }
+});
+
+// ── Open Modal on View Booths Click ───────────────────────────────────────
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('view-booths-btn')) {
+    const expoId = e.target.dataset.id;
+    const expoName = e.target.dataset.name;
+    loadBooths(expoId, expoName);
+    new bootstrap.Modal(document.getElementById('boothModal')).show();
+  }
+});
+
+// ── Page Load ───────────────────────────────────────
+window.addEventListener('DOMContentLoaded', loadExpos);
+</script>
+
+</body>
+</html>

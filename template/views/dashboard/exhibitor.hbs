@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EventSphere — Exhibitor Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* ── Reuse same styles as Admin Dashboard ── */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Poppins',sans-serif; background:#f5f7fa; color:#333; min-height:100vh; }
+
+    header {
+      background:#0066cc; color:white; padding:1rem 2rem;
+      display:flex; justify-content:space-between; align-items:center;
+      position:sticky; top:0; z-index:1000; box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .logo { font-size:1.6rem; font-weight:700; letter-spacing:1px; }
+
+    .user-area { display:flex; align-items:center; gap:1.2rem; }
+
+    .user-info { text-align:right; }
+    .user-name { font-weight:600; }
+    .user-role { font-size:0.85rem; opacity:0.9; }
+
+    .profile-pic {
+      width:42px; height:42px; border-radius:50%; background:#fff; color:#0066cc;
+      display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:1.1rem;
+    }
+
+    .notification { font-size:1.3rem; cursor:pointer; position:relative; }
+    .notification::after {
+      content:"2"; position:absolute; top:-6px; right:-6px; background:#ff4444; color:white;
+      font-size:0.7rem; width:18px; height:18px; border-radius:50%; display:flex;
+      align-items:center; justify-content:center;
+    }
+
+    .sidebar {
+      position:fixed; left:0; top:70px; bottom:0; width:240px; background:white;
+      box-shadow:2px 0 10px rgba(0,0,0,0.08); transition:width 0.3s ease; z-index:900; overflow-y:auto;
+    }
+
+    .sidebar.collapsed { width:70px; }
+
+    .sidebar ul { list-style:none; padding:1.5rem 0; }
+
+    .sidebar li a {
+      display:flex; align-items:center; padding:1rem 1.5rem; color:#555; text-decoration:none;
+      font-weight:500; transition:all 0.2s;
+    }
+
+    .sidebar li a:hover, .sidebar li.active a { background:#e6f0ff; color:#0066cc; }
+
+    .sidebar li a i { margin-right:1rem; font-size:1.3rem; width:24px; text-align:center; }
+
+    .sidebar.collapsed li a span { display:none; }
+    .sidebar.collapsed li a i { margin-right:0; }
+
+    .toggle-btn {
+      position:absolute; top:1rem; right:-12px; background:#0066cc; color:white; border:none;
+      width:24px; height:24px; border-radius:50%; cursor:pointer; display:flex;
+      align-items:center; justify-content:center; font-size:0.9rem;
+      box-shadow:0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    main { margin-left:240px; padding:2rem; transition:margin-left 0.3s ease; }
+    main.collapsed { margin-left:70px; }
+
+    .hamburger { font-size:1.6rem; cursor:pointer; display:none; }
+
+    .kpi-grid {
+      display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1.5rem; margin-bottom:2.5rem;
+    }
+
+    .card {
+      background:white; border-radius:12px; padding:1.6rem; box-shadow:0 4px 15px rgba(0,0,0,0.06);
+      transition:transform 0.2s;
+    }
+
+    .card:hover { transform:translateY(-4px); }
+
+    .card h3 { font-size:1.1rem; color:#555; margin-bottom:0.8rem; }
+
+    .card .value { font-size:2.2rem; font-weight:700; color:#0066cc; }
+
+    .charts-grid {
+      display:grid; grid-template-columns:repeat(auto-fit, minmax(400px, 1fr)); gap:1.8rem; margin-bottom:2.5rem;
+    }
+
+    .chart-card {
+      background:white; border-radius:12px; padding:1.5rem; box-shadow:0 4px 15px rgba(0,0,0,0.06);
+    }
+
+    .recent-activity {
+      background:white; border-radius:12px; padding:1.8rem; box-shadow:0 4px 15px rgba(0,0,0,0.06);
+    }
+
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:1rem; text-align:left; border-bottom:1px solid #eee; }
+    th { background:#f8f9fa; font-weight:600; color:#444; }
+
+    .quick-actions { display:flex; gap:1rem; margin-bottom:2rem; flex-wrap:wrap; }
+
+    .btn {
+      padding:0.8rem 1.5rem; background:#0066cc; color:white; border:none; border-radius:8px;
+      font-weight:500; cursor:pointer; transition:all 0.25s;
+    }
+
+    .btn:hover { background:#0055b3; transform:translateY(-1px); }
+
+    @media (max-width:992px) {
+      .sidebar { width:70px; }
+      main { margin-left:70px; }
+      .sidebar span { display:none; }
+      .hamburger { display:block; }
+    }
+
+    @media (max-width:768px) {
+      header { padding:1rem; }
+      .user-info { display:none; }
+      .charts-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">EventSphere</div>
+  <div class="user-area">
+    <div class="notification"><i class="fas fa-bell"></i></div>
+    <div class="user-info">
+      <div class="user-name">TechNova Solutions</div>
+      <div class="user-role">Exhibitor</div>
+    </div>
+    <div class="profile-pic">TN</div>
+  </div>
+</header>
+
+<div class="sidebar" id="sidebar">
+  <button class="toggle-btn" id="toggleSidebar"><i class="fas fa-chevron-left"></i></button>
+  <ul>
+    <li class="active"><a href="#"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+    <li><a href="/exhibitor/myBooth"><i class="fas fa-store"></i><span>My Booths</span></a></li>
+    <li><a href="/exhibitor/expoList"><i class="fas fa-box"></i><span>View Expo List</span></a></li>
+    <li><a href="/logout"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Logout</span></a></li>
+  </ul>
+</div>
+
+<main id="main">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap;">
+    <h1 style="font-size:1.8rem;">Exhibitor Dashboard</h1>
+    <div class="quick-actions">
+      <button class="btn"><i class="fas fa-plus"></i> Add Product</button>
+      <button class="btn"><i class="fas fa-edit"></i> Update Booth</button>
+      <button class="btn"><i class="fas fa-reply"></i> Respond to Messages</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="card">
+      <h3>Booths Assigned</h3>
+      <div class="value">0</div>
+    </div>
+    <div class="card">
+      <h3>Products Listed</h3>
+      <div class="value">0</div>
+    </div>
+    <div class="card">
+      <h3>Appointments</h3>
+      <div class="value">0</div>
+    </div>
+    <div class="card">
+      <h3>Unread Messages</h3>
+      <div class="value">0</div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Booth Visitor Trends (Line)</h3>
+      <canvas id="lineChart" height="180"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Product Popularity (Bar)</h3>
+      <canvas id="barChart" height="180"></canvas>
+    </div>
+  </div>
+
+  <div class="recent-activity">
+    <h3>Recent Activity</h3>
+    <table>
+      <thead>
+        <tr><th>Time</th><th>Activity</th><th>Details</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>18 min ago</td><td>New Appointment</td><td>Meeting with Ali Khan – 3:30 PM tomorrow</td></tr>
+        <tr><td>42 min ago</td><td>Message Received</td><td>Sara Ahmed asked about bulk discount on Smart Sensors</td></tr>
+        <tr><td>2 hrs ago</td><td>Product Updated</td><td>Added new variant to "IoT Gateway Pro"</td></tr>
+        <tr><td>Yesterday</td><td>Booth Scan</td><td>124 visitors scanned QR today</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+// Sidebar toggle
+const sidebar = document.getElementById('sidebar');
+const main = document.getElementById('main');
+const toggleBtn = document.getElementById('toggleSidebar');
+
+toggleBtn.addEventListener('click', () => {
+  sidebar.classList.toggle('collapsed');
+  main.classList.toggle('collapsed');
+  toggleBtn.innerHTML = sidebar.classList.contains('collapsed') 
+    ? '<i class="fas fa-chevron-right"></i>' : '<i class="fas fa-chevron-left"></i>';
+});
+
+// Charts - Exhibitor version
+const ctxLine = document.getElementById('lineChart').getContext('2d');
+new Chart(ctxLine, {
+  type: 'line',
+  data: {
+    labels: ['10:00', '11:00', '12:00', '13:00', '14:00', '15:00'],
+    datasets: [{
+      label: 'Booth Visitors',
+      data: [12, 28, 45, 62, 51, 38],
+      borderColor: '#0066cc',
+      backgroundColor: 'rgba(0,102,204,0.15)',
+      tension: 0.4,
+      fill: true
+    }]
+  },
+  options: { scales: { y: { beginAtZero: true } } }
+});
+
+const ctxBar = document.getElementById('barChart').getContext('2d');
+new Chart(ctxBar, {
+  type: 'bar',
+  data: {
+    labels: ['Smart Sensor', 'IoT Gateway', 'Control Panel', 'Mobile App', 'Analytics Suite'],
+    datasets: [{
+      label: 'Views / Inquiries',
+      data: [320, 245, 180, 410, 95],
+      backgroundColor: 'rgba(0, 102, 204, 0.65)',
+      borderColor: '#0066cc',
+      borderWidth: 1
+    }]
+  },
+  options: { scales: { y: { beginAtZero: true } } }
+});
+</script>
+</body>
+</html>

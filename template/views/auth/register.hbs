@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EventSphere — Register</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet"/>
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #e6f0ff 0%, #f5f5f5 100%);
+    }
+
+    .register-container {
+      width: 100%;
+      max-width: 480px;
+      margin: 2rem 1rem;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .register-header {
+      background: linear-gradient(rgba(0, 102, 204, 0.88), rgba(0, 51, 102, 0.92)),
+                  url('https://thumbs.dreamstime.com/b/blurred-education-people-sitting-meeting-room-profession-seminar-blurred-people-conference-hall-background-ai-415535031.jpg') 
+                  center/cover no-repeat;
+      color: white;
+      padding: 3.5rem 2rem 2.5rem;
+      text-align: center;
+      position: relative;
+    }
+
+    .register-header::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #0066ccdd, #003366ee);
+      opacity: 0.75;
+    }
+
+    .header-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo {
+      font-size: 3.2rem;
+      margin-bottom: 0.6rem;
+      color: #ffffff;
+    }
+
+    .system-name {
+      font-size: 1.7rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .form-content {
+      padding: 2.5rem 2.2rem 3rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 0.55rem;
+      color: #444;
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    .input-wrapper {
+      position: relative;
+    }
+
+    .input-wrapper i {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #888;
+      font-size: 1.1rem;
+      pointer-events: none;
+    }
+
+    .input-wrapper .toggle-password {
+      right: 14px;
+      left: auto;
+      cursor: pointer;
+      color: #666;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 1rem 1rem 1rem 2.8rem;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.25s ease;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: #0066cc;
+      box-shadow: 0 0 0 4px rgba(0, 102, 204, 0.12);
+    }
+
+    .error-message {
+      color: #e63946;
+      font-size: 0.82rem;
+      margin-top: 0.4rem;
+      display: none;
+    }
+
+    .terms {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin: 1.6rem 0 2rem;
+      font-size: 0.93rem;
+      color: #555;
+    }
+
+    .terms a {
+      color: #0066cc;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .terms a:hover {
+      text-decoration: underline;
+    }
+
+    .btn-register {
+      width: 100%;
+      padding: 1.1rem;
+      background: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.05rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn-register:hover {
+      background: #0055b3;
+      box-shadow: 0 8px 20px rgba(0, 102, 204, 0.28);
+      transform: translateY(-2px);
+    }
+
+    .btn-register.loading::after {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 3px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      right: 24px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    @keyframes spin {
+      to { transform: translateY(-50%) rotate(360deg); }
+    }
+
+    .extra-field {
+      display: none;
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: all 0.4s ease;
+    }
+
+    .extra-field.show {
+      display: block;
+      opacity: 1;
+      max-height: 200px;
+      margin-top: 1.5rem;
+    }
+
+    @media (max-width: 500px) {
+      .form-content {
+        padding: 2rem 1.6rem;
+      }
+      .register-header {
+        padding: 3rem 1.5rem 2rem;
+      }
+    }
+  </style>
+  <style>
+    /* ── Sab purana style same rakh raha hoon ── (sirf chhoti si addition) */
+    .error-message {
+      color: #e63946;
+      font-size: 0.82rem;
+      margin-top: 0.4rem;
+      display: none;
+    }
+
+    .error-message.show {
+      display: block;
+    }
+
+    .btn-register:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* Snackbar styles (simple version – agar alag file mein nahi daala) */
+    .snackbar {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 300px;
+      padding: 14px 20px;
+      border-radius: 8px;
+      color: white;
+      font-weight: 500;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+      opacity: 0;
+      transition: all 0.4s ease;
+      z-index: 9999;
+    }
+
+    .snackbar.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .snackbar.success { background: #2e7d32; }
+    .snackbar.error   { background: #c62828; }
+  </style>
+</head>
+<body>
+
+<div class="register-container">
+  <div class="register-header">
+    <div class="header-content">
+      <div class="logo"><i class="fas fa-calendar-check"></i></div>
+      <div class="system-name">EventSphere Management</div>
+    </div>
+  </div>
+
+  <div class="form-content">
+    <form id="registerForm" novalidate>
+
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <div class="input-wrapper">
+          <i class="fas fa-user"></i>
+          <input type="text" id="name" placeholder="John Doe" required minlength="2"/>
+        </div>
+        <div class="error-message" id="nameError">Name must be at least 2 characters</div>
+      </div>
+
+      <div class="form-group">
+        <label for="email">Email</label>
+        <div class="input-wrapper">
+          <i class="fas fa-envelope"></i>
+          <input type="email" id="email" placeholder="name@example.com" required/>
+        </div>
+        <div class="error-message" id="emailError">Please enter a valid email address</div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <div class="input-wrapper">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="password" placeholder="••••••••" required minlength="6"/>
+          <i class="fas fa-eye toggle-password" id="togglePass"></i>
+        </div>
+        <div class="error-message" id="passError">Password must be at least 6 characters</div>
+      </div>
+
+      <div class="form-group">
+        <label for="confirmPassword">Confirm Password</label>
+        <div class="input-wrapper">
+          <i class="fas fa-lock"></i>
+          <input type="password" id="confirmPassword" placeholder="••••••••" required/>
+        </div>
+        <div class="error-message" id="confirmError">Passwords do not match</div>
+      </div>
+
+      <div class="form-group">
+        <label for="role">Role</label>
+        <select id="role" required>
+          <option value="" disabled selected>Select your role</option>
+          <option value="exhibitor">Exhibitor</option>
+          <option value="attendee">Attendee</option>
+        </select>
+        <div class="error-message" id="roleError">Please select a role</div>
+      </div>
+
+      <div class="extra-field" id="exhibitorFields">
+        <div class="form-group">
+          <label for="company">Company / Organization Name <span style="color:#e63946">*</span></label>
+          <input type="text" id="company" placeholder="Your Company Name"/>
+        </div>
+        <div class="error-message" id="companyError">Company name is required for exhibitors</div>
+      </div>
+
+      <div class="terms">
+        <input type="checkbox" id="termsCheck" required/>
+        <label for="termsCheck">
+          I agree to the <a href="#" id="termsLink">Terms & Conditions</a>
+        </label>
+        <div class="error-message" id="termsError" style="margin-top:8px;">You must agree to continue</div>
+      </div>
+
+      <button type="submit" class="btn-register" id="registerBtn">Create Account</button>
+    </form>
+  </div>
+</div>
+
+<script>
+// ────────────────────────────────────────────────
+// Snackbar Helper (simple global function)
+// ────────────────────────────────────────────────
+function showSnackbar(message, type = 'success') {
+  let snack = document.createElement('div');
+  snack.className = `snackbar ${type}`;
+  snack.textContent = message;
+
+  document.body.appendChild(snack);
+
+  setTimeout(() => snack.classList.add('show'), 100);
+
+  setTimeout(() => {
+    snack.classList.remove('show');
+    setTimeout(() => snack.remove(), 500);
+  }, 3200);
+}
+
+// ────────────────────────────────────────────────
+// Form Logic
+// ────────────────────────────────────────────────
+const form = document.getElementById('registerForm');
+const btn = document.getElementById('registerBtn');
+const roleSelect = document.getElementById('role');
+const exhibitorFields = document.getElementById('exhibitorFields');
+
+// Password toggle
+document.getElementById('togglePass').addEventListener('click', () => {
+  const pass = document.getElementById('password');
+  const type = pass.type === 'password' ? 'text' : 'password';
+  pass.type = type;
+  this.classList.toggle('fa-eye');
+  this.classList.toggle('fa-eye-slash');
+});
+
+// Role change → show/hide company field
+roleSelect.addEventListener('change', () => {
+  if (roleSelect.value === 'exhibitor') {
+    exhibitorFields.classList.add('show');
+    document.getElementById('company').setAttribute('required', '');
+  } else {
+    exhibitorFields.classList.remove('show');
+    document.getElementById('company').removeAttribute('required');
+  }
+});
+
+// Terms link placeholder
+document.getElementById('termsLink').addEventListener('click', e => {
+  e.preventDefault();
+  alert('Terms & Conditions:\n\n• Respect all users\n• No spam or fake accounts\n• Follow platform & event rules');
+});
+
+// ────────────────────────────────────────────────
+// Submit Handler with Frontend + Backend
+// ────────────────────────────────────────────────
+form.addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  // Reset all errors
+  document.querySelectorAll('.error-message').forEach(el => {
+    el.classList.remove('show');
+  });
+
+  let isValid = true;
+
+  // 1. Name
+  const nameVal = document.getElementById('name').value.trim();
+  if (nameVal.length < 2) {
+    document.getElementById('nameError').classList.add('show');
+    isValid = false;
+  }
+
+  // 2. Email (better regex check)
+  const emailVal = document.getElementById('email').value.trim();
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(emailVal)) {
+    document.getElementById('emailError').classList.add('show');
+    isValid = false;
+  }
+
+  // 3. Password
+  const passVal = document.getElementById('password').value;
+  if (passVal.length < 6) {
+    document.getElementById('passError').classList.add('show');
+    isValid = false;
+  }
+
+  // 4. Confirm Password
+  if (passVal !== document.getElementById('confirmPassword').value) {
+    document.getElementById('confirmError').classList.add('show');
+    isValid = false;
+  }
+
+  // 5. Role
+  if (!roleSelect.value) {
+    document.getElementById('roleError').classList.add('show');
+    isValid = false;
+  }
+
+  // 6. Company (only if exhibitor)
+  if (roleSelect.value === 'exhibitor') {
+    const companyVal = document.getElementById('company').value.trim();
+    if (companyVal.length < 2) {
+      document.getElementById('companyError').classList.add('show');
+      isValid = false;
+    }
+  }
+
+  // 7. Terms checkbox
+  if (!document.getElementById('termsCheck').checked) {
+    document.getElementById('termsError').classList.add('show');
+    isValid = false;
+  }
+
+  if (!isValid) {
+    showSnackbar("Please fix the errors above", "error");
+    return;
+  }
+
+  // ── Sab theek → backend call ───────────────────────
+  btn.disabled = true;
+  btn.classList.add('loading');
+  btn.textContent = 'Creating Account...';
+
+  const payload = {
+    name: nameVal,
+    email: emailVal,
+    password: passVal,
+    role: roleSelect.value,
+    // company: role === 'exhibitor' ? companyVal : undefined  (backend ignore karega)
+  };
+
+  try {
+    const response = await fetch('/api/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+
+    btn.classList.remove('loading');
+    btn.textContent = 'Create Account';
+    btn.disabled = false;
+
+    if (response.ok && result.success) {
+      showSnackbar(result.message || "Registration successful! 🎉", "success");
+      // Optional: redirect after 1.5 sec
+      setTimeout(() => {
+        window.location.href = "/login"; // ya dashboard
+      }, 1800);
+    } else {
+      showSnackbar(result.message || "Registration failed. Please try again.", "error");
+    }
+
+  } catch (err) {
+    console.error("Fetch error:", err);
+    showSnackbar("Network error – please check your connection", "error");
+    btn.classList.remove('loading');
+    btn.textContent = 'Create Account';
+    btn.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>

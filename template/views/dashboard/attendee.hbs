@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EventSphere — Attendee Dashboard</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* Same styles as above – copy-pasted for standalone file */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Poppins',sans-serif; background:#f5f7fa; color:#333; min-height:100vh; }
+
+    header { background:#0066cc; color:white; padding:1rem 2rem; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:1000; box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+    .logo { font-size:1.6rem; font-weight:700; letter-spacing:1px; }
+    .user-area { display:flex; align-items:center; gap:1.2rem; }
+    .user-info { text-align:right; }
+    .user-name { font-weight:600; }
+    .user-role { font-size:0.85rem; opacity:0.9; }
+    .profile-pic { width:42px; height:42px; border-radius:50%; background:#fff; color:#0066cc; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:1.1rem; }
+    .notification { font-size:1.3rem; cursor:pointer; position:relative; }
+    .notification::after { content:"5"; position:absolute; top:-6px; right:-6px; background:#ff4444; color:white; font-size:0.7rem; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+
+    .sidebar { position:fixed; left:0; top:70px; bottom:0; width:240px; background:white; box-shadow:2px 0 10px rgba(0,0,0,0.08); transition:width 0.3s ease; z-index:900; overflow-y:auto; }
+    .sidebar.collapsed { width:70px; }
+    .sidebar ul { list-style:none; padding:1.5rem 0; }
+    .sidebar li a { display:flex; align-items:center; padding:1rem 1.5rem; color:#555; text-decoration:none; font-weight:500; transition:all 0.2s; }
+    .sidebar li a:hover, .sidebar li.active a { background:#e6f0ff; color:#0066cc; }
+    .sidebar li a i { margin-right:1rem; font-size:1.3rem; width:24px; text-align:center; }
+    .sidebar.collapsed li a span { display:none; }
+    .sidebar.collapsed li a i { margin-right:0; }
+
+    .toggle-btn { position:absolute; top:1rem; right:-12px; background:#0066cc; color:white; border:none; width:24px; height:24px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:0.9rem; box-shadow:0 2px 8px rgba(0,0,0,0.15); }
+
+    main { margin-left:240px; padding:2rem; transition:margin-left 0.3s ease; }
+    main.collapsed { margin-left:70px; }
+
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:1.5rem; margin-bottom:2.5rem; }
+    .card { background:white; border-radius:12px; padding:1.6rem; box-shadow:0 4px 15px rgba(0,0,0,0.06); transition:transform 0.2s; }
+    .card:hover { transform:translateY(-4px); }
+    .card h3 { font-size:1.1rem; color:#555; margin-bottom:0.8rem; }
+    .card .value { font-size:2.2rem; font-weight:700; color:#0066cc; }
+
+    .charts-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(400px, 1fr)); gap:1.8rem; margin-bottom:2.5rem; }
+    .chart-card { background:white; border-radius:12px; padding:1.5rem; box-shadow:0 4px 15px rgba(0,0,0,0.06); }
+
+    .recent-activity { background:white; border-radius:12px; padding:1.8rem; box-shadow:0 4px 15px rgba(0,0,0,0.06); }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:1rem; text-align:left; border-bottom:1px solid #eee; }
+    th { background:#f8f9fa; font-weight:600; color:#444; }
+
+    .quick-actions { display:flex; gap:1rem; margin-bottom:2rem; flex-wrap:wrap; }
+
+    .btn { padding:0.8rem 1.5rem; background:#0066cc; color:white; border:none; border-radius:8px; font-weight:500; cursor:pointer; transition:all 0.25s; }
+    .btn:hover { background:#0055b3; transform:translateY(-1px); }
+
+    @media (max-width:992px) { .sidebar { width:70px; } main { margin-left:70px; } .sidebar span { display:none; } }
+    @media (max-width:768px) { header { padding:1rem; } .user-info { display:none; } .charts-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">EventSphere</div>
+  <div class="user-area">
+    <div class="notification"><i class="fas fa-bell"></i></div>
+    <div class="user-info">
+      <div class="user-name">Habib Ahmed</div>
+      <div class="user-role">Attendee</div>
+    </div>
+    <div class="profile-pic">HA</div>
+  </div>
+</header>
+
+<div class="sidebar" id="sidebar">
+  <button class="toggle-btn" id="toggleSidebar"><i class="fas fa-chevron-left"></i></button>
+  <ul>
+    <li class="active"><a href="#"><i class="fas fa-tachometer-alt"></i><span>Dashboard</span></a></li>
+    {{!-- <li><a href="#"><i class="fas fa-ticket-alt"></i><span>My Sessions</span></a></li> --}}
+    <li><a href="/attendee/expo"><i class="fas fa-search"></i><span>Explore Expos</span></a></li>
+    {{!-- <li><a href="#"><i class="fas fa-calendar-check"></i><span>Appointments</span></a></li> --}}
+    {{!-- <li><a href="#"><i class="fas fa-star"></i><span>Feedback</span></a></li> --}}
+    {{!-- <li><a href="#"><i class="fas fa-cog"></i><span>Settings</span></a></li> --}}
+        <li><a href="/logout"><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Logout</span></a></li>
+
+  </ul>
+</div>
+
+<main id="main">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem; flex-wrap:wrap;">
+    <h1 style="font-size:1.8rem;">Attendee Dashboard</h1>
+    <div class="quick-actions">
+      <button class="btn"><i class="fas fa-calendar-plus"></i> Book Session</button>
+      <button class="btn"><i class="fas fa-user-plus"></i> Schedule Meeting</button>
+      <button class="btn"><i class="fas fa-comment-dots"></i> Send Feedback</button>
+    </div>
+  </div>
+
+  <div class="kpi-grid">
+    <div class="card">
+      <h3>Expos Registered</h3>
+      <div class="value" id="expoCount">0</div>
+    </div>
+    <div class="card">
+      <h3>Sessions Booked</h3>
+      <div class="value">0</div>
+    </div>
+    <div class="card">
+      <h3>Appointments</h3>
+      <div class="value">0</div>
+    </div>
+    <div class="card">
+      <h3>Notifications</h3>
+      <div class="value">0</div>
+    </div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="chart-card">
+      <h3>Session Participation Trend</h3>
+      <canvas id="lineChart" height="180"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Favorite Categories</h3>
+      <canvas id="pieChart" height="220"></canvas>
+    </div>
+  </div>
+
+  <div class="recent-activity">
+    <h3>Recent Activity</h3>
+    <table>
+      <thead>
+        <tr><th>Time</th><th>Activity</th><th>Details</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>1 hr ago</td><td>Session Booked</td><td>AI in Retail – Tomorrow 11:00 AM</td></tr>
+        <tr><td>3 hrs ago</td><td>Meeting Requested</td><td>Sent request to TechNova Solutions</td></tr>
+        <tr><td>Yesterday</td><td>Expo Update</td><td>New exhibitor added to Karachi Tech Expo</td></tr>
+        <tr><td>2 days ago</td><td>Feedback Submitted</td><td>IoT Workshop – Rated 4.7</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script>
+// Sidebar toggle (same as before)
+const sidebar = document.getElementById('sidebar');
+const main = document.getElementById('main');
+const toggleBtn = document.getElementById('toggleSidebar');
+
+toggleBtn.addEventListener('click', () => {
+  sidebar.classList.toggle('collapsed');
+  main.classList.toggle('collapsed');
+  toggleBtn.innerHTML = sidebar.classList.contains('collapsed') 
+    ? '<i class="fas fa-chevron-right"></i>' : '<i class="fas fa-chevron-left"></i>';
+});
+
+// Charts - Attendee version
+const ctxLine = document.getElementById('lineChart').getContext('2d');
+new Chart(ctxLine, {
+  type: 'line',
+  data: {
+    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+    datasets: [{
+      label: 'Sessions Attended',
+      data: [2, 5, 8, 11, 14],
+      borderColor: '#0066cc',
+      backgroundColor: 'rgba(0,102,204,0.15)',
+      tension: 0.4,
+      fill: true
+    }]
+  },
+  options: { scales: { y: { beginAtZero: true } } }
+});
+
+const ctxPie = document.getElementById('pieChart').getContext('2d');
+new Chart(ctxPie, {
+  type: 'pie',
+  data: {
+    labels: ['AI & Tech', 'IoT', 'Retail', 'Sustainability', 'Others'],
+    datasets: [{
+      data: [38, 25, 18, 12, 7],
+      backgroundColor: ['#0066cc', '#4dabf7', '#90cdf4', '#bee3f8', '#e6f0ff']
+    }]
+  },
+  options: { responsive: true }
+});
+
+
+
+document.addEventListener("DOMContentLoaded",async()=> {
+  fetchCount();
+})
+
+let fetchCount = async() => {
+  try{
+    let reqData = await fetch("/api/attendee/expo-reg-count");
+    let res = await reqData.json();
+
+    if(res.success == false){
+      alert(res.message);
+      return;
+    }
+    let data = res.data;
+    let expoCount = document.getElementById("expoCount");
+    expoCount.innerHTML = data;
+
+
+  }catch(err){
+    console.error(err);
+
+  }
+}
+</script>
+</body>
+</html>
